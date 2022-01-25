@@ -56,16 +56,27 @@ for row in open_orders:
         time.sleep(100)
         i = 0
     aux = list(row)
-    query = """SELECT  pg.name
-                            FROM purchase_order_line pl
-                            LEFT JOIN procurement_order po
-                                ON pl.id = po.purchase_line_id
-                            LEFT JOIN procurement_group pg
-                                ON pg.id = po.group_id
-                            WHERE order_id = %s"""
+    query = """SELECT  *
+                                        FROM procurement_group  pg
+                                        LEFT JOIN procurement_order po
+                                            ON pg.id = po.group_id
+                                        where pg.name = %s
+                                        """
+
     with conn.cursor() as cur:
-        cur.execute(query,(aux[7],))
-        aux.append(cur.fetchall()[0][0])
+        cur.execute(query, (aux[0],))
+        reference = cur.fetchall()
+    for ref in reference:
+        if ref[34] != None:
+            query = """SELECT  po.name FROM purchase_order_line pl
+                                        LEFT JOIN purchase_order po
+                                            ON po.id = pl.order_id
+                                            where pl.id = %s
+                                                   """
+            with conn.cursor() as cur:
+                cur.execute(query, (ref[34],))
+                reference = cur.fetchall()
+                aux.append(reference[0][0])
 
     aux[1] = aux[1].strftime("%y-%m-%d %H:%M:%S")
     try:
